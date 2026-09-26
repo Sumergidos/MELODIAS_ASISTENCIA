@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -164,16 +165,22 @@
         </div>
       </section>
     </div>
-  <div class="modal-backdrop" id="qr-modal" hidden>
-      <section class="member-modal" role="dialog" aria-modal="true" aria-labelledby="qr-title">
-        <div class="modal-heading"><p class="section-kicker">Escanear QR</p><button class="modal-close" id="qr-close" type="button" aria-label="Cerrar">×</button></div>
-        <h3 id="qr-title">Cámara</h3>
-        <div id="qr-reader" style="width: 100%; height: 300px;"></div>
-        <div class="modal-actions"><button class="modal-cancel" id="qr-close-btn" type="button">Cerrar</button></div>
+    <div class="modal-backdrop" id="qr-modal" hidden>
+      <section class="member-modal" role="dialog" aria-modal="true">
+        <div class="modal-heading"><p class="section-kicker">Código QR del integrante</p><button class="modal-close" id="qr-close" type="button" aria-label="Cerrar">×</button></div>
+        <h3 id="qr-title">Código QR</h3>
+        <div id="qr-container" style="display: flex; justify-content: center; padding: 20px;"></div>
       </section>
     </div>
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="app.js"></script>
+    <div class="modal-backdrop" id="qr-scanner-modal" hidden>
+      <section class="member-modal" role="dialog" aria-modal="true">
+        <div class="modal-heading"><p class="section-kicker">Escanear QR</p><button class="modal-close" id="qr-scanner-close" type="button" aria-label="Cerrar">×</button></div>
+        <h3 id="qr-scanner-title">Cámara</h3>
+        <div id="qr-reader" style="width: 100%;"></div>
+      </section>
+    </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="app.js"></script>
 </body>
 </html>
