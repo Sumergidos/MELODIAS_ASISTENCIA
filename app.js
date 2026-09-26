@@ -276,24 +276,89 @@ function openJustificationModal(index, status) {
 }
 
 function closeJustificationModal() {
-  document.querySelector("#justification-modal").hidden = true;
-  justificationMemberIndex = -1;
-  pendingStatus = "";
+  justificationModal.hidden = true;
 }
 
-setTimeout(() => {
-  const now = new Date();
-  if (now.getHours() >= 21) {
-    const records = getAttendanceRecords();
-    records.forEach(record => {
-      if (!record.status) {
-        record.status = "absent";
-      }
+function openQrModal(index) {
+  const modal = document.querySelector("#qr-modal");
+  const member = members[index];
+  document.querySelector("#qr-title").textContent = `QR: ${member.name}`;
+  const container = document.querySelector("#qr-container");
+  container.innerHTML = "";
+  new QRCode(container, {
+    text: member.name,
+    width: 200,
+    height: 200
+  });
+  modal.hidden = false;
+}
+
+function closeQrModal() {
+  document.querySelector("#qr-modal").hidden = true;
+}
+
+function openQrScanner() {
+  const modal = document.querySelector("#qr-scanner-modal");
+  modal.hidden = false;
+  
+  html5QrCodeScanner = new Html5Qrcode("qr-reader");
+  html5QrCodeScanner.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    (decodedText) => {
+      onScanSuccess(decodedText);
+    },
+    (errorMessage) => {
+      // ignore
+    }
+  ).catch((err) => {
+    console.error(err);
+    showToast("No se pudo iniciar la cámara.");
+  });
+}
+
+function closeQrScanner() {
+  if (html5QrCodeScanner) {
+    html5QrCodeScanner.stop().then(() => {
+        document.querySelector("#qr-scanner-modal").hidden = true;
+    }).catch((err) => {
+        console.error(err);
+        document.querySelector("#qr-scanner-modal").hidden = true;
     });
-    renderMembers();
-    markChanged();
   }
-}, 1000);
+}
+
+function onScanSuccess(decodedText) {
+  closeQrScanner();
+  const memberName = decodedText.trim();
+  const index = members.findIndex(m => m.name.toLowerCase() === memberName.toLowerCase());
+  
+  if (index === -1) {
+    showToast("Integrante no encontrado.");
+    return;
+  }
+  
+  // Show options for status
+  pendingStatus = "";
+  justificationMemberIndex = index;
+  // Use a simple prompt for now, or build another modal if needed, 
+  // but for now let's use the justification modal logic to ask status first?
+  // User asked for "Presente o Tardanza".
+  if (window.confirm(`¿Marcar como Presente a ${members[index].name}?`)) {
+      updateStatus(index, "present");
+  } else if (window.confirm(`¿Marcar como Tardanza a ${members[index].name}?`)) {
+      openJustificationModal(index, "late");
+  }
+}
+
+function updateStatus(index, status) {
+    const records = getAttendanceRecords();
+    records[index].status = status;
+    records[index].justification = null;
+    markChanged();
+    renderMembers();
+    showToast(`${members[index].name} marcado como ${labels[status]}.`);
+}
 
 table.addEventListener("click", (event) => {
   const stateButton = event.target.closest("[data-status]");
@@ -319,47 +384,6 @@ table.addEventListener("click", (event) => {
   }
   openQrModal(Number(action.dataset.index));
 });
-
-document.querySelector("#scan-qr-button").addEventListener("click", openQrScanner);
-
-function openQrScanner() {
-  document.querySelector("#qr-modal").hidden = false;
-  const html5QrCode = new Html5Qrcode("qr-reader");
-  html5QrCode.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: { width: 250, height: 250 } },
-    (decodedText) => {
-      handleScannedMember(decodedText);
-      html5QrCode.stop();
-      closeQrScanner();
-    }
-  ).catch(err => { console.error(err); });
-}
-
-function handleScannedMember(name) {
-  const member = members.find(m => m.name === name);
-  if (!member) { showToast("Integrante no encontrado"); return; }
-  const index = members.indexOf(member);
-  const now = new Date();
-  const hour = now.getHours();
-  const minute = now.getMinutes();
-  const totalMinutes = hour * 60 + minute;
-  
-  let status = "present";
-  if (totalMinutes > 7 * 60 + 15) {
-      status = "late";
-  }
-  
-  const records = getAttendanceRecords();
-  records[index].status = status;
-  markChanged();
-  renderMembers();
-  showToast(`${member.name} registrado como ${labels[status]}.`);
-}
-
-function closeQrScanner() {
-  document.querySelector("#qr-modal").hidden = true;
-}
 
 searchInput.addEventListener("input", renderMembers);
 document.querySelector("#save-button").addEventListener("click", () => {
@@ -452,6 +476,8 @@ document.querySelectorAll("[data-justification]").forEach((button) => {
 });
 document.querySelector("#justification-close").addEventListener("click", closeJustificationModal);
 document.querySelector("#justification-modal").addEventListener("click", (event) => { if (event.target.id === "justification-modal") closeJustificationModal(); });
+document.querySelector("#qr-close").addEventListener("click", closeQrModal);
+document.querySelector("#qr-modal").addEventListener("click", (event) => { if (event.target.id === "qr-modal") closeQrModal(); });
 document.querySelector("#attendance-date").addEventListener("change", (event) => {
   const date = new Date(`${event.target.value}T12:00:00`);
   document.querySelector("#current-date").textContent = date.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }).replace(".", "").toUpperCase();
